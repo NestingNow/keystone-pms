@@ -1,7 +1,5 @@
-/* keystone-pms/app/page.tsx - OPTIMIZED */
-
+/* keystone-pms/app/page.tsx - OPTIMIZED + FIXED (snake_case columns) */
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Users, DollarSign, TrendingUp, CheckCircle, Eye } from 'lucide-react';
@@ -31,6 +29,7 @@ export default function Dashboard() {
     topCustomers: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const fetchMetrics = async () => {
@@ -38,23 +37,24 @@ export default function Dashboard() {
       const now = new Date();
       const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const { data: projects } = await supabase
+      const { data: projects, error: queryError } = await supabase
         .from('projects')
         .select(`
-          customer_approval, 
-          total_quoted, 
-          invoiced_amount, 
-          material_cost, 
-          labor_cost, 
-          engineering_cost, 
-          equipment_cost, 
-          logistics_cost, 
-          additional_costs, 
-          project_complete, 
-          customer, 
+          customer_approval,
+          total_quoted,
+          invoiced_amount,
+          material_cost,
+          labor_cost,
+          engineering_cost,
+          equipment_cost,
+          logistics_cost,
+          additional_costs,
+          project_complete,
+          customer,
           created_at
         `);
 
+      if (queryError) throw queryError;
       if (!projects?.length) {
         setLoading(false);
         return;
@@ -102,18 +102,42 @@ export default function Dashboard() {
         topCustomers,
       });
       setLastUpdated(new Date());
-    } catch (err) {
+      setError(null);
+    } catch (err: any) {
       console.error('Dashboard fetch error:', err);
+      setError(err.message || 'Failed to load metrics');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Phase 1a: metrics & realtime coming in full dashboard
+    let mounted = true;
+    const timeout = setTimeout(() => {
+      if (mounted) setLoading(false); // safety net – screen never freezes
+    }, 8000);
+
+    fetchMetrics();
+
+    // Realtime – live for all 4 users (Mac + Windows)
+    const channel = supabase
+      .channel('live-metrics')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        fetchMetrics
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-2xl text-white">Loading live metrics…</div>;
+  if (error) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-2xl text-red-400">Error: {error}</div>;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -154,7 +178,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
@@ -166,7 +189,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -178,7 +200,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -190,7 +211,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 col-span-1 md:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
@@ -202,7 +222,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -214,7 +233,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
