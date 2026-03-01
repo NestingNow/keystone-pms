@@ -33,19 +33,7 @@ export default function ProjectDetail() {
   };
 
   useEffect(() => {
-    let isMounted = true;
-
-    const runAsync = async () => {
-      // ← your existing async code here (ping, Supabase subscribe, etc.)
-      // const result = await ...
-      // if (isMounted) { setState... }
-    };
-
-    runAsync();
-
-    return () => {
-      isMounted = false;   // ← SYNC cleanup only (React happy)
-    };
+    // Phase 1a: metrics & realtime coming in full dashboard
   }, []);
 
   // LIVE EXCEL FORMULAS (exact match to your V5.xlsm)

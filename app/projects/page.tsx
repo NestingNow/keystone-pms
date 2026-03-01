@@ -26,19 +26,7 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    let isMounted = true;
-
-    const runAsync = async () => {
-      // ← your existing async code here (ping, Supabase subscribe, etc.)
-      // const result = await ...
-      // if (isMounted) { setState... }
-    };
-
-    runAsync();
-
-    return () => {
-      isMounted = false;   // ← SYNC cleanup only (React happy)
-    };
+    // Phase 1a: metrics & realtime coming in full dashboard
   }, []);
 
   const filteredProjects = projects.filter(p =>
