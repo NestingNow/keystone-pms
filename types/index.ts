@@ -1,0 +1,34 @@
+export type Project = {
+  id: string;
+  project_number: number;
+  customer: string;
+  project_name: string;
+  customer_rfq: string | null;
+  customer_po: string | null;
+  customer_approval: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  supply_industrial: string | null;
+  project_complete: boolean;
+  payment_received: boolean | null;
+  material_cost: number | null;
+  labor_cost: number | null;
+  engineering_cost: number | null;
+  equipment_cost: number | null;
+  logistics_cost: number | null;
+  additional_costs: number | null;
+  invoiced_amount: number | null;
+  pl_margin: number | null;
+  hours_quoted: number | null;
+  actual_hours: number | null;
+  hours_difference: number | null;
+  materials_quoted: number | null;
+  labor_quoted: number | null;
+  engineering_quoted: number | null;
+  equipment_quoted: number | null;
+  logistics_quoted: number | null;
+  taxes_quoted: number | null;
+  total_quoted: number | null;
+  estimated_margin: number | null;
+  estimated_pl: number | null;
+  created_at: string;
+  // any extra notes or dates you want
+};
