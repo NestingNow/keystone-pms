@@ -1,10 +1,9 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Keystone Supply PMS',
-  description: 'Realtime project management • Zero file movement',
-  icons: { icon: '/favicon.ico' },
+  title: "Keystone Supply PMS",
+  description: "Phase 1a – Dashboard + New Project",
 };
 
 export default function RootLayout({
