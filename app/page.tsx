@@ -63,7 +63,7 @@ export default function Dashboard() {
       const openQuotes = projects.filter(p => p.customer_approval === 'PENDING').length;
       const pendingApprovals = openQuotes;
       const activeProjects = projects.filter(p => !p.project_complete).length;
-      const completedThisMonth = projects.filter(p => 
+      const completedThisMonth = projects.filter(p =>
         p.project_complete && (p.created_at || '') >= monthStart
       ).length;
 
@@ -76,7 +76,7 @@ export default function Dashboard() {
         .filter(p => (p.invoiced_amount || 0) > 0)
         .map(p => {
           const costs = (p.material_cost || 0) + (p.labor_cost || 0) + (p.engineering_cost || 0) +
-                        (p.equipment_cost || 0) + (p.logistics_cost || 0) + (p.additional_costs || 0);
+            (p.equipment_cost || 0) + (p.logistics_cost || 0) + (p.additional_costs || 0);
           return ((p.invoiced_amount || 0) - costs) / (p.invoiced_amount || 0) * 100;
         });
       const avgPLMargin = plMargins.length ? Math.round(plMargins.reduce((a, b) => a + b, 0) / plMargins.length) : 0;
@@ -110,9 +110,19 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchMetrics();
-    const unsubscribe = subscribeToTable('projects', fetchMetrics);
-    return unsubscribe;
+    let isMounted = true;
+
+    const runAsync = async () => {
+      // ← your existing async code here (ping, Supabase subscribe, etc.)
+      // const result = await ...
+      // if (isMounted) { setState... }
+    };
+
+    runAsync();
+
+    return () => {
+      isMounted = false;   // ← SYNC cleanup only (React happy)
+    };
   }, []);
 
   if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-2xl text-white">Loading live metrics…</div>;

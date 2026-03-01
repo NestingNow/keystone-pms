@@ -33,21 +33,31 @@ export default function ProjectDetail() {
   };
 
   useEffect(() => {
-    fetchProject();
-    const unsubscribe = subscribeToTable('projects', fetchProject, `id=eq.${id}`);
-    return unsubscribe;
-  }, [id]);
+    let isMounted = true;
+
+    const runAsync = async () => {
+      // ← your existing async code here (ping, Supabase subscribe, etc.)
+      // const result = await ...
+      // if (isMounted) { setState... }
+    };
+
+    runAsync();
+
+    return () => {
+      isMounted = false;   // ← SYNC cleanup only (React happy)
+    };
+  }, []);
 
   // LIVE EXCEL FORMULAS (exact match to your V5.xlsm)
-  const totalCosts = project ? 
+  const totalCosts = project ?
     (project.material_cost || 0) + (project.labor_cost || 0) + (project.engineering_cost || 0) +
     (project.equipment_cost || 0) + (project.logistics_cost || 0) + (project.additional_costs || 0) : 0;
 
   const pl = project ? (project.invoiced_amount || 0) - totalCosts : 0;
-  const plMargin = project && (project.invoiced_amount || 0) > 0 
+  const plMargin = project && (project.invoiced_amount || 0) > 0
     ? Math.round((pl / (project.invoiced_amount || 0)) * 100) : 0;
 
-  const totalQuoted = project ? 
+  const totalQuoted = project ?
     (project.materials_quoted || 0) + (project.labor_quoted || 0) + (project.engineering_quoted || 0) +
     (project.equipment_quoted || 0) + (project.logistics_quoted || 0) + (project.taxes_quoted || 0) : 0;
 
@@ -57,7 +67,7 @@ export default function ProjectDetail() {
 
     const { error } = await supabase
       .from('projects')
-      .update({ ...project, pl_margin: plMargin, total_quoted })
+      .update({ ...project, pl_margin: plMargin, totalQuoted })
       .eq('id', id);
 
     if (!error) {
@@ -88,11 +98,11 @@ export default function ProjectDetail() {
           {/* Basic Info */}
           <div>
             <label className="text-xs text-zinc-500 block mb-2">CUSTOMER</label>
-            <input value={project.customer} onChange={e => setProject({...project, customer: e.target.value.toUpperCase()})} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
+            <input value={project.customer} onChange={e => setProject({ ...project, customer: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
           </div>
           <div>
             <label className="text-xs text-zinc-500 block mb-2">PROJECT NAME</label>
-            <input value={project.project_name} onChange={e => setProject({...project, project_name: e.target.value.toUpperCase()})} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
+            <input value={project.project_name} onChange={e => setProject({ ...project, project_name: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
           </div>
           {/* ... add all other fields the same way – customer_rfq as date, costs as number, dropdown for approval, checkbox for complete, etc. */}
         </div>

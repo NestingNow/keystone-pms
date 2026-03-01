@@ -26,9 +26,19 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    fetchProjects();
-    const unsubscribe = subscribeToTable('projects', fetchProjects);
-    return unsubscribe;
+    let isMounted = true;
+
+    const runAsync = async () => {
+      // ← your existing async code here (ping, Supabase subscribe, etc.)
+      // const result = await ...
+      // if (isMounted) { setState... }
+    };
+
+    runAsync();
+
+    return () => {
+      isMounted = false;   // ← SYNC cleanup only (React happy)
+    };
   }, []);
 
   const filteredProjects = projects.filter(p =>
