@@ -17,11 +17,17 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState('');
 
   const fetchProjects = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('projects')
       .select('*')
       .order('project_number', { ascending: false });
-    setProjects(data || []);
+    if (error) {
+      console.error('supabase fetchProjects error', error);
+      setProjects([]);
+    } else {
+      console.debug('supabase fetchProjects', data?.length ?? 0);
+      setProjects(data || []);
+    }
     setLoading(false);
   };
 
