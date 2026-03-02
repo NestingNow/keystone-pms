@@ -139,134 +139,130 @@ export default function Dashboard() {
     };
   }, []);
 
-  if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-2xl text-white">Loading live metrics…</div>;
-  if (error) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-2xl text-red-400">Error: {error}</div>;
+  if (loading) return <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center text-2xl text-black dark:text-white">Loading live metrics…</div>;
+  if (error) return <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center text-2xl text-red-600 dark:text-red-400">Error: {error}</div>;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
-      <div className="max-w-7xl mx-auto space-y-10">
-        <div className="flex justify-between items-end">
-          <div>
-            <h1 className="text-5xl font-bold tracking-tight">Keystone Supply Dashboard</h1>
-            <p className="text-zinc-500 mt-2">
-              Realtime across all 4 users • Last updated {lastUpdated.toLocaleTimeString()}
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 sm:p-12 lg:p-16">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-16 space-y-8">
+          <div className="space-y-3">
+            <h1 className="text-6xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Real-time metrics • Last updated {lastUpdated.toLocaleTimeString()}
             </p>
           </div>
-          <div className="flex gap-4">
+          
+          <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/new-project"
-              className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 px-8 py-4 rounded-3xl font-medium transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-black dark:bg-white text-white dark:text-black font-medium rounded-full hover:opacity-90 transition-opacity duration-200"
             >
-              <Plus className="w-6 h-6" /> New Project
+              <Plus className="w-5 h-5" /> New Project
             </Link>
             <Link
               href="/projects"
-              className="flex items-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-8 py-4 rounded-3xl font-medium transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-900 text-black dark:text-white font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200"
             >
-              All Projects
+              View All
             </Link>
           </div>
         </div>
 
-        {/* KEY METRICS CARDS – EXACTLY AS IN BUILD SPEC */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center">
-                <Eye className="w-6 h-6 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">OPEN QUOTES</p>
-                <p className="text-4xl font-mono font-bold text-amber-400">{metrics.openQuotes}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">PENDING APPROVALS</p>
-                <p className="text-4xl font-mono font-bold text-emerald-400">{metrics.pendingApprovals}</p>
+        {/* Metric Pills Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {/* Open Quotes */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Open Quotes</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-5xl font-bold text-amber-600 dark:text-amber-400">{metrics.openQuotes}</p>
+                <Eye className="w-6 h-6 text-amber-400 opacity-40" />
               </div>
             </div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">YTD QUOTED</p>
-                <p className="text-4xl font-mono font-bold">${metrics.totalQuotedYTD.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">THIS MONTH</p>
-                <p className="text-4xl font-mono font-bold">${metrics.totalQuotedMonth.toLocaleString()}</p>
+
+          {/* Pending Approvals */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Pending Approvals</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.pendingApprovals}</p>
+                <CheckCircle className="w-6 h-6 text-emerald-400 opacity-40" />
               </div>
             </div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 col-span-1 md:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">AVG P&amp;L MARGIN</p>
-                <p className="text-4xl font-mono font-bold text-emerald-400">{metrics.avgPLMargin}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm">ACTIVE PROJECTS</p>
-                <p className="text-4xl font-mono font-bold">{metrics.activeProjects}</p>
+
+          {/* YTD Quoted */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">YTD Quoted</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-4xl font-bold">${metrics.totalQuotedYTD.toLocaleString()}</p>
+                <DollarSign className="w-6 h-6 text-gray-400 opacity-40" />
               </div>
             </div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-emerald-400" />
+
+          {/* This Month */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">This Month</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-4xl font-bold">${metrics.totalQuotedMonth.toLocaleString()}</p>
+                <TrendingUp className="w-6 h-6 text-gray-400 opacity-40" />
               </div>
-              <div>
-                <p className="text-zinc-500 text-sm">COMPLETED THIS MONTH</p>
-                <p className="text-4xl font-mono font-bold text-emerald-400">{metrics.completedThisMonth}</p>
+            </div>
+          </div>
+
+          {/* Avg P&L Margin */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 p-8 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-200 lg:col-span-1 md:col-span-2">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Avg P&L Margin</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.avgPLMargin}%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Projects */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Active Projects</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-5xl font-bold">{metrics.activeProjects}</p>
+                <Users className="w-6 h-6 text-gray-400 opacity-40" />
+              </div>
+            </div>
+          </div>
+
+          {/* Completed This Month */}
+          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+            <div className="flex flex-col justify-between h-full">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Completed Month</p>
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.completedThisMonth}</p>
+                <CheckCircle className="w-6 h-6 text-emerald-400 opacity-40" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* TOP CUSTOMERS */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-3">
-            <DollarSign className="w-5 h-5" /> TOP 5 CUSTOMERS BY REVENUE
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {metrics.topCustomers.length > 0 ? (
-              metrics.topCustomers.map((c, i) => (
-                <div key={i} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 text-center">
-                  <p className="text-2xl font-mono font-bold text-emerald-400">${c.revenue.toLocaleString()}</p>
-                  <p className="text-zinc-400 text-sm mt-2 uppercase tracking-widest truncate">{c.customer}</p>
+        {/* Top Customers Section */}
+        {metrics.topCustomers.length > 0 && (
+          <div className="rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 sm:p-12 border border-gray-200 dark:border-gray-800">
+            <h2 className="text-2xl font-bold mb-8">Top Customers</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {metrics.topCustomers.map((c, i) => (
+                <div key={i} className="rounded-2xl bg-white dark:bg-black p-6 border border-gray-200 dark:border-gray-800 text-center hover:border-gray-300 dark:hover:border-gray-700 transition-colors duration-200">
+                  <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${c.revenue.toLocaleString()}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 font-medium uppercase tracking-wider truncate">{c.customer}</p>
                 </div>
-              ))
-            ) : (
-              <p className="text-zinc-500 col-span-full text-center py-12">No revenue data yet</p>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
