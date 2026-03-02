@@ -104,8 +104,10 @@ export default function NewProject() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">APPROVAL STATUS</label>
+            <label htmlFor="customer_approval" className="text-xs text-zinc-500 block mb-2">APPROVAL STATUS</label>
             <select
+              id="customer_approval"
+              aria-label="Approval status"
               value={form.customer_approval}
               onChange={e => setForm(prev => ({ ...prev, customer_approval: e.target.value as Approval }))}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
@@ -118,8 +120,9 @@ export default function NewProject() {
         </div>
 
         <div>
-          <label className="text-xs text-zinc-500 block mb-2">CUSTOMER (uppercase enforced)</label>
+          <label htmlFor="customer" className="text-xs text-zinc-500 block mb-2">CUSTOMER (uppercase enforced)</label>
           <input
+            id="customer"
             value={form.customer}
             onChange={e => updateForm('customer', e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-xl uppercase"
@@ -128,8 +131,9 @@ export default function NewProject() {
         </div>
 
         <div>
-          <label className="text-xs text-zinc-500 block mb-2">PROJECT NAME (uppercase enforced)</label>
+          <label htmlFor="project_name" className="text-xs text-zinc-500 block mb-2">PROJECT NAME (uppercase enforced)</label>
           <input
+            id="project_name"
             value={form.project_name}
             onChange={e => updateForm('project_name', e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-xl uppercase"
@@ -139,8 +143,9 @@ export default function NewProject() {
 
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">CUSTOMER RFQ DATE <span className="text-emerald-400">(optional)</span></label>
+            <label htmlFor="customer_rfq" className="text-xs text-zinc-500 block mb-2">CUSTOMER RFQ DATE <span className="text-emerald-400">(optional)</span></label>
             <input
+              id="customer_rfq"
               type="date"
               value={form.customer_rfq}
               onChange={e => updateForm('customer_rfq', e.target.value)}
@@ -148,8 +153,9 @@ export default function NewProject() {
             />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">CUSTOMER PO #</label>
+            <label htmlFor="customer_po" className="text-xs text-zinc-500 block mb-2">CUSTOMER PO #</label>
             <input
+              id="customer_po"
               value={form.customer_po}
               onChange={e => updateForm('customer_po', e.target.value)}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4"
@@ -158,8 +164,9 @@ export default function NewProject() {
         </div>
 
         <div>
-          <label className="text-xs text-zinc-500 block mb-2">SUPPLY / INDUSTRIAL</label>
+          <label htmlFor="supply_industrial" className="text-xs text-zinc-500 block mb-2">SUPPLY / INDUSTRIAL</label>
           <input
+            id="supply_industrial"
             value={form.supply_industrial}
             onChange={e => updateForm('supply_industrial', e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4"

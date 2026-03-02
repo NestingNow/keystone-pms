@@ -84,12 +84,12 @@ export default function ProjectDetail() {
         <div className="grid grid-cols-2 gap-8">
           {/* Basic Info */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">CUSTOMER</label>
-            <input value={project.customer} onChange={e => setProject({ ...project, customer: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
+            <label htmlFor="project_customer" className="text-xs text-zinc-500 block mb-2">CUSTOMER</label>
+            <input id="project_customer" value={project.customer} onChange={e => setProject({ ...project, customer: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">PROJECT NAME</label>
-            <input value={project.project_name} onChange={e => setProject({ ...project, project_name: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
+            <label htmlFor="project_name" className="text-xs text-zinc-500 block mb-2">PROJECT NAME</label>
+            <input id="project_name" value={project.project_name} onChange={e => setProject({ ...project, project_name: e.target.value.toUpperCase() })} className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 uppercase" />
           </div>
           {/* ... add all other fields the same way – customer_rfq as date, costs as number, dropdown for approval, checkbox for complete, etc. */}
         </div>
