@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Users, DollarSign, TrendingUp, CheckCircle, Eye } from 'lucide-react';
-import { supabase, subscribeToTable } from '@/lib/supabase';
-import type { Project } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 type Metric = {
   openQuotes: number;

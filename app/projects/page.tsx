@@ -8,7 +8,7 @@ All Projects List Page – ENHANCED WITH INSTANT GLOBAL SEARCH
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Eye, Search } from 'lucide-react';
-import { supabase, subscribeToTable } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import type { Project } from '@/types';
 
 export default function ProjectsPage() {
@@ -26,7 +26,12 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    // Phase 1a: metrics & realtime coming in full dashboard
+    let mounted = true;
+    (async () => {
+      await fetchProjects();
+      if (!mounted) return;
+    })();
+    return () => { mounted = false; };
   }, []);
 
   const filteredProjects = projects.filter(p =>

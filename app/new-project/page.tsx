@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { createProjectFolders } from '@/lib/microsoft-graph';
-import type { Project } from '@/types';
 
 export default function NewProject() {
   const router = useRouter();

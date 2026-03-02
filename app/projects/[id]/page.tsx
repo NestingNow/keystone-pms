@@ -6,9 +6,8 @@ keystone-pms/app/projects/[id]/page.tsx
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
-import { supabase, subscribeToTable } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import type { Project } from '@/types';
 
 export default function ProjectDetail() {
