@@ -53,11 +53,7 @@ export default function Dashboard() {
           created_at
         `);
 
-      if (queryError) {
-        console.error('supabase projects query error', queryError);
-        throw queryError;
-      }
-      console.debug('supabase projects fetched', projects?.length ?? 0, projects?.slice?.(0, 3));
+      if (queryError) throw queryError;
       if (!projects?.length) {
         setLoading(false);
         return;
