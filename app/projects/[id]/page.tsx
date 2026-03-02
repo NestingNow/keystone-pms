@@ -18,22 +18,44 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const fetchProject = async () => {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) console.error(error);
-    else setProject(data);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    // Phase 1a: metrics & realtime coming in full dashboard
-  }, []);
+    let mounted = true;
+    if (!id) return;
+
+    const fetchProjectData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', id)
+          .single();
+        return { data: data as Project | null, error };
+      } catch (err) {
+        console.error(err);
+        return { data: null, error: err };
+      }
+    };
+
+    (async () => {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await fetchProjectData();
+      if (!mounted) return;
+      if (error) {
+        console.error(error);
+        setError(error ? String((error as Record<string, unknown>).message || error) : 'Unknown error');
+        setProject(null);
+      } else {
+        setProject(data);
+      }
+      setLoading(false);
+    })();
+
+    return () => { mounted = false; };
+  }, [id]);
 
   // LIVE EXCEL FORMULAS (exact match to your V5.xlsm)
   const totalCosts = project ?
@@ -59,13 +81,19 @@ export default function ProjectDetail() {
 
     if (!error) {
       setLastSaved(new Date());
-      fetchProject();
+      const { data, error: fetchError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!fetchError && data) setProject(data);
     } else {
       alert('Save failed – check console');
     }
     setSaving(false);
   };
 
+  if (error) return <div className="min-h-screen bg-zinc-950 p-10 text-center text-2xl text-red-400">Error: {error}</div>;
   if (loading || !project) return <div className="min-h-screen bg-zinc-950 p-10 text-center text-2xl">Loading project…</div>;
 
   return (

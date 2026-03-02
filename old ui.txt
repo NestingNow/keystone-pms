@@ -1,0 +1,519 @@
+/* keystone-pms/app/page.tsx - OPTIMIZED */
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Plus, Users, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Project } from '@/types';
+
+type Metric = { /* ... same as before ... */ };
+
+export default function Dashboard() {
+  const [metrics, setMetrics] = useState<Metric>({ /* ... */ });
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  const fetchMetrics = async () => {
+    try {
+      const now = new Date();
+      const ytdStart = `${now.getFullYear()}-01-01`;
+
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('customer_approval, total_quoted, invoiced_amount, material_cost, labor_cost, engineering_cost, equipment_cost, logistics_cost, additional_costs, project_complete, customer, created_at');
+
+      if (!projects) return;
+
+      // ... same calculations ...
+
+      setMetrics({ /* ... */ });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { /* same realtime ... */ }, []);
+
+  if (loading) return <div className="p-10 text-center text-xl">Loading dashboard metrics…</div>;
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-10">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-5xl font-bold tracking-tight">Keystone Supply Dashboard</h1>
+          <p className="text-zinc-500 mt-2">
+            Realtime across all 4 users • Last updated {lastUpdated.toLocaleTimeString()}
+          </p>
+        </div>
+        {/* ... buttons same ... */}
+      </div>
+      {/* rest identical */}
+    </div>
+  );
+}
+
+
+
+
+/* keystone-pms/app/layout.tsx */
+'use client';
+
+import "./globals.css";
+// REMOVE SessionProvider for now (we're using Supabase + Entra ID)
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className="dark">
+      <body className="bg-zinc-950 text-white">
+        {children}
+      </body>
+    </html>
+  );
+}
+
+
+
+
+
+/*
+keystone-pms/app/projects/page.tsx
+All Projects List Page – ENHANCED WITH INSTANT GLOBAL SEARCH
+*/
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Plus, Eye, Search } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Project } from '@/types';
+
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchProjects = async () => {
+    const { data } = await supabase
+      .from('projects')
+      .select('*')
+      .order('project_number', { ascending: false });
+    setProjects(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProjects();
+
+    const channel = supabase
+      .channel('projects-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchProjects)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
+
+  // INSTANT GLOBAL SEARCH FILTER
+  const filteredProjects = projects.filter(p =>
+    p.project_number.toString().includes(search) ||
+    (p.customer || '').includes(search) ||
+    (p.project_name || '').includes(search) ||
+    (p.customer_po || '').includes(search)
+  );
+
+  if (loading) return <div className="min-h-screen bg-zinc-950 p-10 text-center text-2xl text-white">Loading projects…</div>;
+
+  return (
+    <div className="min-h-screen bg-zinc-950 p-8 text-white">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-5xl font-bold tracking-tight">All Projects</h1>
+            <p className="text-zinc-400 mt-2 text-lg">Realtime across all 4 users • {projects.length} total</p>
+          </div>
+          <div className="flex gap-4">
+            <Link
+              href="/new-project"
+              className="flex items-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-8 py-4 rounded-3xl font-medium transition-all"
+            >
+              <Plus className="w-6 h-6" /> New Project
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center gap-3 bg-black hover:bg-zinc-800 text-white px-8 py-4 rounded-3xl font-medium transition-all"
+            >
+              ← Dashboard
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
+          {/* SEARCH BAR */}
+          <div className="p-6 border-b border-zinc-800 flex items-center gap-4 bg-zinc-950">
+            <div className="relative flex-1">
+              <Search className="absolute left-5 top-4 w-5 h-5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search job #, customer, project name, or PO…"
+                value={search}
+                onChange={e => setSearch(e.target.value.toUpperCase())}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl pl-12 pr-6 py-4 text-lg placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+              />
+            </div>
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="text-zinc-500 hover:text-white px-5 py-2 text-sm font-medium"
+              >
+                CLEAR
+              </button>
+            )}
+          </div>
+
+          <table className="w-full">
+            <thead className="bg-zinc-950 border-b border-zinc-800">
+              <tr>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">PROJECT #</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">CUSTOMER</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">PROJECT NAME</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">APPROVAL</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">COMPLETE</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">INVOICED</th>
+                <th className="px-8 py-6 text-left text-sm font-semibold text-zinc-400 uppercase tracking-widest">P&amp;L MARGIN</th>
+                <th className="px-8 py-6"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800 bg-zinc-950">
+              {filteredProjects.map((p) => (
+                <tr key={p.id} className="hover:bg-zinc-900/80 transition-all duration-200 group">
+                  <td className="px-8 py-6 font-mono text-2xl font-semibold text-white">{p.project_number}</td>
+                  <td className="px-8 py-6 uppercase font-medium text-white">{p.customer}</td>
+                  <td className="px-8 py-6 uppercase text-white">{p.project_name}</td>
+                  <td className="px-8 py-6">
+                    {p.customer_approval && (
+                      <span className={`px-5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset
+                        ${p.customer_approval === 'ACCEPTED' ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-400/30' : ''}
+                        ${p.customer_approval === 'REJECTED' ? 'bg-red-500/20 text-red-400 ring-red-400/30' : ''}
+                        ${p.customer_approval === 'PENDING' ? 'bg-amber-500/20 text-amber-400 ring-amber-400/30' : ''}
+                      `}>
+                        {p.customer_approval}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-8 py-6 text-white font-medium">{p.project_complete ? '✅ YES' : 'NO'}</td>
+                  <td className="px-8 py-6 text-white font-medium">
+                    {p.invoiced_amount ? `$${p.invoiced_amount.toLocaleString()}` : '—'}
+                  </td>
+                  <td className="px-8 py-6 text-white font-medium">
+                    {p.pl_margin ? `${p.pl_margin}%` : '—'}
+                  </td>
+                  <td className="px-8 py-6">
+                    <Link href={`/projects/${p.id}`} className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-colors group-hover:translate-x-0.5">
+                      <Eye className="w-5 h-5" /> View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+
+              {filteredProjects.length === 0 && projects.length > 0 && (
+                <tr>
+                  <td colSpan={8} className="px-8 py-24 text-center text-2xl text-zinc-500">
+                    No matches for “{search}” – try different keywords
+                  </td>
+                </tr>
+              )}
+
+              {projects.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-8 py-24 text-center text-2xl text-zinc-500">
+                    No projects yet – create one above
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+/*
+keystone-pms/app/projects/[id]/page.tsx
+*/
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Project } from '@/types';
+
+export default function ProjectDetail() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const fetchProject = async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) console.error(error);
+    else setProject(data);
+    setLoading(false);
+  };
+
+  // LIVE REALTIME
+  useEffect(() => {
+    fetchProject();
+
+    const channel = supabase
+      .channel(`project-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `id=eq.${id}` }, fetchProject)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [id]);
+
+  // LIVE FORMULAS (exact Excel)
+  const pl = project ? 
+    ((project.invoiced_amount || 0) - 
+     ((project.material_cost || 0) + (project.labor_cost || 0) + (project.engineering_cost || 0) + 
+      (project.equipment_cost || 0) + (project.logistics_cost || 0) + (project.additional_costs || 0))) : 0;
+
+  const plMargin = project && (project.invoiced_amount || 0) > 0 
+    ? Math.round((pl / (project.invoiced_amount || 0)) * 100) 
+    : 0;
+
+  const handleSave = async () => {
+    if (!project) return;
+    setSaving(true);
+
+    const projectToSave = {
+      ...project,
+      pl_margin: plMargin,           // ← CRITICAL FIX
+    };
+
+    const { error } = await supabase
+      .from('projects')
+      .update(projectToSave)
+      .eq('id', id);
+
+    if (!error) {
+      setLastSaved(new Date());
+      fetchProject(); // refresh
+    } else {
+      alert('Save failed – check console');
+    }
+    setSaving(false);
+  };
+
+  // ... rest of component same, just update the save button text to show lastSaved if you want
+}
+
+
+
+
+/*
+keystone-pms/app/new-project/page.tsx
+New Project Creation Form (auto job # + uppercase enforcement)
+*/
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { Project } from '@/types';
+
+export default function NewProject() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [projectNumber, setProjectNumber] = useState<number | null>(null);
+
+  const [form, setForm] = useState({
+    customer: '',
+    project_name: '',
+    customer_rfq: '',
+    customer_po: '',
+    customer_approval: 'PENDING' as const,
+    supply_industrial: '',
+  });
+
+  // Auto next job number (global sequential like your Excel)
+  useEffect(() => {
+    const getNextNumber = async () => {
+      const { data } = await supabase
+        .from('projects')
+        .select('project_number')
+        .order('project_number', { ascending: false })
+        .limit(1);
+      
+      const last = data?.[0]?.project_number ?? 101349;
+      setProjectNumber(last + 1);
+    };
+    getNextNumber();
+  }, []);
+
+  const updateForm = (field: string, value: string) => {
+    setForm(prev => ({
+      ...prev,
+      [field]: field === 'customer' || field === 'project_name' 
+        ? value.toUpperCase() 
+        : value
+    }));
+  };
+
+  const handleCreate = async () => {
+    if (!projectNumber || !form.customer || !form.project_name) {
+      alert('Customer and Project Name are required');
+      return;
+    }
+
+    setLoading(true);
+
+    const insertData = {
+      project_number: projectNumber,
+      customer: form.customer,
+      project_name: form.project_name,
+      customer_rfq: form.customer_rfq || null,   // ← FIXED: empty date → null
+      customer_po: form.customer_po,
+      customer_approval: form.customer_approval,
+      supply_industrial: form.supply_industrial,
+      project_complete: false,
+    };
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      alert('Error creating project: ' + error.message);
+    } else {
+      // TODO: Phase 1a folder creation goes here
+      // await createProjectFolders(data.project_number, data.customer, data.project_name);
+      // (we'll build this in lib/microsoft-graph.ts next)
+      
+      alert(`✅ Project #${projectNumber} created successfully!`);
+      router.push(`/projects/${data.id}`);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="p-8 max-w-3xl mx-auto">
+      <div className="flex items-center gap-4 mb-10">
+        <button 
+          onClick={() => router.push('/')} 
+          className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back to Dashboard
+        </button>
+        <h1 className="text-5xl font-bold tracking-tight">New Project</h1>
+      </div>
+
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10 space-y-8">
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="text-xs text-zinc-500 block mb-2">PROJECT # (auto)</label>
+            <div className="bg-zinc-950 border border-zinc-700 rounded-2xl px-6 py-4 text-4xl font-mono font-bold text-emerald-400">
+              {projectNumber ?? '—'}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-zinc-500 block mb-2">APPROVAL STATUS</label>
+            <select
+              value={form.customer_approval}
+              onChange={e => setForm(prev => ({...prev, customer_approval: e.target.value as any}))}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
+            >
+              <option value="PENDING">PENDING</option>
+              <option value="ACCEPTED">ACCEPTED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-zinc-500 block mb-2">CUSTOMER (uppercase enforced)</label>
+          <input
+            value={form.customer}
+            onChange={e => updateForm('customer', e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-xl uppercase"
+            placeholder="ACME CORP"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs text-zinc-500 block mb-2">PROJECT NAME (uppercase enforced)</label>
+          <input
+            value={form.project_name}
+            onChange={e => updateForm('project_name', e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-xl uppercase"
+            placeholder="ROLLED CYLINDER REBUILD"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="text-xs text-zinc-500 block mb-2">CUSTOMER RFQ DATE <span className="text-emerald-400">(optional)</span></label>
+            <input 
+              type="date" 
+              value={form.customer_rfq}
+              onChange={e => updateForm('customer_rfq', e.target.value)} 
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+            />
+          </div>
+          <div>
+            <label className="text-xs text-zinc-500 block mb-2">CUSTOMER PO #</label>
+            <input 
+              value={form.customer_po} 
+              onChange={e => updateForm('customer_po', e.target.value)} 
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-zinc-500 block mb-2">SUPPLY / INDUSTRIAL</label>
+          <input 
+            value={form.supply_industrial} 
+            onChange={e => updateForm('supply_industrial', e.target.value)} 
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+          />
+        </div>
+
+        <button
+          onClick={handleCreate}
+          disabled={loading || !projectNumber}
+          className="w-full bg-black hover:bg-zinc-800 disabled:bg-zinc-900 text-white py-5 rounded-3xl font-medium text-xl flex items-center justify-center gap-3 transition-all"
+        >
+          <Save className="w-6 h-6" />
+          {loading ? 'Creating…' : `Create Project #${projectNumber}`}
+        </button>
+      </div>
+
+      <p className="text-center text-zinc-500 mt-8 text-sm">
+        After creation you will be taken to the project detail page
+      </p>
+    </div>
+  );
+}
