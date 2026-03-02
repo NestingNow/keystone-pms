@@ -1,5 +1,3 @@
-import { supabase } from './supabase';
-
 export const createProjectFolders = async (
   projectNumber: number,
   customer: string,

@@ -17,12 +17,13 @@ export default function NewProject() {
   const [loading, setLoading] = useState(false);
   const [projectNumber, setProjectNumber] = useState<number | null>(null);
 
+  type Approval = 'PENDING' | 'ACCEPTED' | 'REJECTED';
   const [form, setForm] = useState({
     customer: '',
     project_name: '',
     customer_rfq: '',
     customer_po: '',
-    customer_approval: 'PENDING' as const,
+    customer_approval: 'PENDING' as Approval,
     supply_industrial: '',
   });
 
@@ -42,8 +43,8 @@ export default function NewProject() {
   const updateForm = (field: string, value: string) => {
     setForm(prev => ({
       ...prev,
-      [field]: field === 'customer' || field === 'project_name' 
-        ? value.toUpperCase() 
+      [field]: field === 'customer' || field === 'project_name'
+        ? value.toUpperCase()
         : value
     }));
   };
@@ -86,8 +87,8 @@ export default function NewProject() {
   return (
     <div className="p-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-10">
-        <button 
-          onClick={() => router.push('/')} 
+        <button
+          onClick={() => router.push('/')}
           className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Dashboard
@@ -107,7 +108,7 @@ export default function NewProject() {
             <label className="text-xs text-zinc-500 block mb-2">APPROVAL STATUS</label>
             <select
               value={form.customer_approval}
-              onChange={e => setForm(prev => ({...prev, customer_approval: e.target.value as any}))}
+              onChange={e => setForm(prev => ({ ...prev, customer_approval: e.target.value as Approval }))}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4 text-lg"
             >
               <option value="PENDING">PENDING</option>
@@ -140,29 +141,29 @@ export default function NewProject() {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="text-xs text-zinc-500 block mb-2">CUSTOMER RFQ DATE <span className="text-emerald-400">(optional)</span></label>
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={form.customer_rfq}
-              onChange={e => updateForm('customer_rfq', e.target.value)} 
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+              onChange={e => updateForm('customer_rfq', e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4"
             />
           </div>
           <div>
             <label className="text-xs text-zinc-500 block mb-2">CUSTOMER PO #</label>
-            <input 
-              value={form.customer_po} 
-              onChange={e => updateForm('customer_po', e.target.value)} 
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+            <input
+              value={form.customer_po}
+              onChange={e => updateForm('customer_po', e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4"
             />
           </div>
         </div>
 
         <div>
           <label className="text-xs text-zinc-500 block mb-2">SUPPLY / INDUSTRIAL</label>
-          <input 
-            value={form.supply_industrial} 
-            onChange={e => updateForm('supply_industrial', e.target.value)} 
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4" 
+          <input
+            value={form.supply_industrial}
+            onChange={e => updateForm('supply_industrial', e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-6 py-4"
           />
         </div>
 

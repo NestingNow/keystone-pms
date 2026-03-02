@@ -103,9 +103,13 @@ export default function Dashboard() {
       });
       setLastUpdated(new Date());
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Dashboard fetch error:', err);
-      setError(err.message || 'Failed to load metrics');
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to load metrics');
+      } else {
+        setError(String(err) || 'Failed to load metrics');
+      }
     } finally {
       setLoading(false);
     }
