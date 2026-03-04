@@ -44,9 +44,10 @@ module.exports = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+  	lg: `var(--radius)`,
+  	md: `calc(var(--radius) - 2px)`,
+  	sm: `calc(var(--radius) - 4px)`,
+  	pill: '9999px',  // for ultra-rounded if needed
       },
       keyframes: {
         "accordion-down": {
