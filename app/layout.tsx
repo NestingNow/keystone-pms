@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SupabaseProvider } from "@/components/supabase-provider";
-import { Toaster } from "@/components/ui/sonner";   // ← this is the only line that matters
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.className}`}>
+      <body className={`${inter.className} bg-background text-foreground antialiased min-h-screen`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

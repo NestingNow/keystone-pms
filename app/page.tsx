@@ -1,18 +1,18 @@
 /* keystone-pms/app/page.tsx - OPTIMIZED + FIXED (snake_case columns) */
 'use client';
+
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Plus, Users, DollarSign, TrendingUp, CheckCircle, Eye } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Plus, Users, DollarSign, TrendingUp, CheckCircle, Eye, CircleCheckBig } from 'lucide-react';
 
 type Metric = {
   openQuotes: number;
   pendingApprovals: number;
-  totalQuotedYTD: number;
-  totalQuotedMonth: number;
-  avgPLMargin: number;
+  ytdQuoted: number;
+  totalPl: number;
   activeProjects: number;
-  completedThisMonth: number;
+  completedProjects: number;
   topCustomers: Array<{ customer: string; revenue: number }>;
 };
 
@@ -20,249 +20,214 @@ export default function Dashboard() {
   const [metrics, setMetrics] = useState<Metric>({
     openQuotes: 0,
     pendingApprovals: 0,
-    totalQuotedYTD: 0,
-    totalQuotedMonth: 0,
-    avgPLMargin: 0,
+    ytdQuoted: 0,
+    totalPl: 0,
     activeProjects: 0,
-    completedThisMonth: 0,
+    completedProjects: 0,
     topCustomers: [],
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const fetchMetrics = async () => {
-    try {
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const now = new Date();
+    const ytdStart = `${now.getFullYear()}-01-01`;
 
-      const { data: projects, error: queryError } = await supabase
-        .from('projects')
-        .select(`
-          customer_approval,
-          total_quoted,
-          invoiced_amount,
-          material_cost,
-          labor_cost,
-          engineering_cost,
-          equipment_cost,
-          logistics_cost,
-          additional_costs,
-          project_complete,
-          customer,
-          created_at
-        `);
+    const { data: projects } = await supabase
+      .from('projects')
+      .select(
+        'customer_approval, total_quoted, invoiced_amount, material_cost, labor_cost, engineering_cost, equipment_cost, logistics_cost, additional_costs, project_complete, customer, created_at'
+      );
 
-      if (queryError) throw queryError;
-      if (!projects?.length) {
-        setLoading(false);
-        return;
+    if (!projects) return;
+
+    const openQuotes = projects.filter((p) => p.customer_approval === 'PENDING').length;
+    const pendingApprovals = openQuotes;
+
+    const ytdQuoted = projects
+      .filter((p) => p.created_at >= ytdStart)
+      .reduce((sum, p) => sum + (p.total_quoted || 0), 0);
+
+    const totalPl = projects.reduce((sum, p) => {
+      const costs =
+        (p.material_cost || 0) +
+        (p.labor_cost || 0) +
+        (p.engineering_cost || 0) +
+        (p.equipment_cost || 0) +
+        (p.logistics_cost || 0) +
+        (p.additional_costs || 0);
+      return sum + ((p.invoiced_amount || 0) - costs);
+    }, 0);
+
+    const activeProjects = projects.filter((p) => !p.project_complete).length;
+    const completedProjects = projects.filter((p) => p.project_complete).length;
+
+    // Top 5 customers by invoiced revenue
+    const customerMap = new Map();
+    projects.forEach((p) => {
+      const rev = p.invoiced_amount || 0;
+      if (rev > 0) {
+        const current = customerMap.get(p.customer) || 0;
+        customerMap.set(p.customer, current + rev);
       }
+    });
 
-      const openQuotes = projects.filter(p => p.customer_approval === 'PENDING').length;
-      const pendingApprovals = openQuotes;
-      const activeProjects = projects.filter(p => !p.project_complete).length;
-      const completedThisMonth = projects.filter(p =>
-        p.project_complete && (p.created_at || '') >= monthStart
-      ).length;
+    const topCustomers = Array.from(customerMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([customer, revenue]) => ({ customer: customer.toUpperCase(), revenue }));
 
-      const totalQuotedYTD = projects.reduce((sum, p) => sum + (p.total_quoted || 0), 0);
-      const totalQuotedMonth = projects
-        .filter(p => (p.created_at || '') >= monthStart)
-        .reduce((sum, p) => sum + (p.total_quoted || 0), 0);
+    setMetrics({
+      openQuotes,
+      pendingApprovals,
+      ytdQuoted,
+      totalPl,
+      activeProjects,
+      completedProjects,
+      topCustomers,
+    });
 
-      const plMargins = projects
-        .filter(p => (p.invoiced_amount || 0) > 0)
-        .map(p => {
-          const costs = (p.material_cost || 0) + (p.labor_cost || 0) + (p.engineering_cost || 0) +
-            (p.equipment_cost || 0) + (p.logistics_cost || 0) + (p.additional_costs || 0);
-          return ((p.invoiced_amount || 0) - costs) / (p.invoiced_amount || 0) * 100;
-        });
-      const avgPLMargin = plMargins.length ? Math.round(plMargins.reduce((a, b) => a + b, 0) / plMargins.length) : 0;
-
-      const customerMap = new Map<string, number>();
-      projects.forEach(p => {
-        const rev = p.invoiced_amount || 0;
-        customerMap.set(p.customer || 'Unknown', (customerMap.get(p.customer || 'Unknown') || 0) + rev);
-      });
-      const topCustomers = Array.from(customerMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([customer, revenue]) => ({ customer, revenue }));
-
-      setMetrics({
-        openQuotes,
-        pendingApprovals,
-        totalQuotedYTD,
-        totalQuotedMonth,
-        avgPLMargin,
-        activeProjects,
-        completedThisMonth,
-        topCustomers,
-      });
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err: unknown) {
-      console.error('Dashboard fetch error:', err);
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to load metrics');
-      } else {
-        setError(String(err) || 'Failed to load metrics');
-      }
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   useEffect(() => {
-    let mounted = true;
-    const timeout = setTimeout(() => {
-      if (mounted) setLoading(false); // safety net – screen never freezes
-    }, 8000);
-
     fetchMetrics();
 
-    // Realtime – live for all 4 users (Mac + Windows)
     const channel = supabase
-      .channel('live-metrics')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'projects' },
-        fetchMetrics
-      )
+      .channel('dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchMetrics)
       .subscribe();
 
     return () => {
-      mounted = false;
-      clearTimeout(timeout);
       supabase.removeChannel(channel);
     };
   }, []);
 
-  if (loading) return <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center text-2xl text-black dark:text-white">Loading live metrics…</div>;
-  if (error) return <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center text-2xl text-red-600 dark:text-red-400">Error: {error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center text-xl text-muted-foreground">Loading dashboard metrics…</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-8 sm:p-12 lg:p-16">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background text-foreground p-8 sm:p-12 lg:p-16">
+      <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
-        <div className="mb-16 space-y-8">
-          <div className="space-y-3">
-            <h1 className="text-6xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              Real-time metrics • Last updated {lastUpdated.toLocaleTimeString()}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div>
+            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight">Keystone Supply Dashboard</h1>
+            <p className="text-muted-foreground mt-2">
+              Realtime across all 4 users • Last updated just now
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/new-project"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-black dark:bg-white text-white dark:text-black font-medium rounded-full hover:opacity-90 transition-opacity duration-200"
+              className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors shadow-sm"
             >
-              <Plus className="w-5 h-5" /> New Project
+              <Plus className="w-6 h-6" />
+              New Project
             </Link>
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-900 text-black dark:text-white font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200"
+              className="inline-flex items-center justify-center gap-3 bg-secondary text-secondary-foreground px-8 py-4 rounded-full font-medium hover:bg-secondary/80 transition-colors"
             >
-              View All
+              View All Projects
             </Link>
           </div>
         </div>
 
-        {/* Metric Pills Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {/* Open Quotes */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Open Quotes</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-5xl font-bold text-amber-600 dark:text-amber-400">{metrics.openQuotes}</p>
-                <Eye className="w-6 h-6 text-amber-400 opacity-40" />
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 auto-rows-fr">
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-4 hover:ring-primary/20 transition-all duration-700 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+            <div className="flex flex-col items-center text-center space-y-6 pt-8 flex-1 w-full">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">OPEN QUOTES</div>
+                <div className="text-5xl sm:text-6xl font-bold mt-4">{metrics.openQuotes}</div>
               </div>
+              <Eye className="w-16 h-16 p-4 rounded-2xl shadow-2xl mx-auto bg-gradient-to-br from-primary via-blue-500 to-indigo-500 text-primary-foreground drop-shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700" />
             </div>
           </div>
 
-          {/* Pending Approvals */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Pending Approvals</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.pendingApprovals}</p>
-                <CheckCircle className="w-6 h-6 text-emerald-400 opacity-40" />
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-4 hover:ring-primary/20 transition-all duration-700 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+            <div className="flex flex-col items-center text-center space-y-6 pt-8 flex-1 w-full">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">PENDING APPROVALS</div>
+                <div className="text-5xl sm:text-6xl font-bold mt-4">{metrics.pendingApprovals}</div>
               </div>
+              <CircleCheckBig className="w-16 h-16 p-4 rounded-2xl shadow-2xl mx-auto bg-gradient-to-br from-emerald-500 to-teal-500 text-emerald-900 drop-shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 font-bold" />
             </div>
           </div>
 
-          {/* YTD Quoted */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">YTD Quoted</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-4xl font-bold">${metrics.totalQuotedYTD.toLocaleString()}</p>
-                <DollarSign className="w-6 h-6 text-gray-400 opacity-40" />
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-4 hover:ring-primary/20 transition-all duration-700 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+            <div className="flex flex-col items-center text-center space-y-6 pt-8 flex-1 w-full">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">YTD QUOTED</div>
+                <div className="text-5xl sm:text-6xl font-bold mt-4">
+                  ${metrics.ytdQuoted.toLocaleString()}
+                </div>
               </div>
+              <DollarSign className="w-16 h-16 p-4 rounded-2xl shadow-2xl mx-auto bg-gradient-to-br from-sky-400 to-blue-500 text-blue-900 drop-shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 font-bold" />
             </div>
           </div>
 
-          {/* This Month */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">This Month</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-4xl font-bold">${metrics.totalQuotedMonth.toLocaleString()}</p>
-                <TrendingUp className="w-6 h-6 text-gray-400 opacity-40" />
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-6 lg:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-4 hover:ring-primary/20 transition-all duration-700 group relative overflow-hidden flex flex-col justify-between min-h-[280px] lg:col-span-1">
+            <div className="flex flex-col items-center text-center space-y-6 pt-8 flex-1 w-full">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">TOTAL P&L</div>
+                <div
+                  className={`text-5xl sm:text-6xl font-bold mt-4 ${
+                    metrics.totalPl >= 0 ? 'text-emerald-500' : 'text-red-500'
+                  }`}
+                >
+                  ${metrics.totalPl.toLocaleString()}
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Avg P&L Margin */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 p-8 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-200 lg:col-span-1 md:col-span-2">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Avg P&L Margin</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.avgPLMargin}%</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Projects */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Active Projects</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-5xl font-bold">{metrics.activeProjects}</p>
-                <Users className="w-6 h-6 text-gray-400 opacity-40" />
-              </div>
-            </div>
-          </div>
-
-          {/* Completed This Month */}
-          <div className="group relative overflow-hidden rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-            <div className="flex flex-col justify-between h-full">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Completed Month</p>
-              <div className="mt-6 flex items-baseline gap-3">
-                <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.completedThisMonth}</p>
-                <CheckCircle className="w-6 h-6 text-emerald-400 opacity-40" />
-              </div>
+              <TrendingUp className="w-16 h-16 p-4 rounded-2xl shadow-2xl mx-auto bg-gradient-to-br from-violet-500 to-purple-500 text-purple-100 drop-shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700" />
             </div>
           </div>
         </div>
 
-        {/* Top Customers Section */}
-        {metrics.topCustomers.length > 0 && (
-          <div className="rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 sm:p-12 border border-gray-200 dark:border-gray-800">
-            <h2 className="text-2xl font-bold mb-8">Top Customers</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {metrics.topCustomers.map((c, i) => (
-                <div key={i} className="rounded-2xl bg-white dark:bg-black p-6 border border-gray-200 dark:border-gray-800 text-center hover:border-gray-300 dark:hover:border-gray-700 transition-colors duration-200">
-                  <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${c.revenue.toLocaleString()}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 font-medium uppercase tracking-wider truncate">{c.customer}</p>
+        {/* Active/Completed + Top Customers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-2 hover:ring-primary/20 transition-all duration-700 relative overflow-hidden">
+            <h3 className="text-xl font-semibold mb-8">Active vs Completed</h3>
+            <div className="flex gap-12 items-center justify-center">
+              <div className="text-center flex-1">
+                <div className="text-6xl sm:text-7xl font-bold">{metrics.activeProjects}</div>
+                <div className="text-muted-foreground mt-3 font-medium">ACTIVE</div>
+              </div>
+              <div className="text-center flex-1">
+                <div className="text-6xl sm:text-7xl font-bold text-emerald-500">
+                  {metrics.completedProjects}
                 </div>
-              ))}
+                <div className="text-muted-foreground mt-3 font-medium">COMPLETED</div>
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="bg-gradient-to-b from-card/95 backdrop-blur-sm border border-border/50 rounded-2xl p-8 shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_35px_70px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:border-primary/30 hover:ring-2 hover:ring-primary/20 transition-all duration-700 relative overflow-hidden">
+            <h3 className="text-xl font-semibold mb-8">Top 5 Customers (Revenue)</h3>
+            <div className="space-y-6">
+              {metrics.topCustomers.length > 0 ? (
+                metrics.topCustomers.map((c, i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                    <div className="font-medium uppercase">{c.customer}</div>
+                    <div className="font-mono text-emerald-500">${c.revenue.toLocaleString()}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground py-12 text-center">No revenue data yet</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
